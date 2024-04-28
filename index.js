@@ -41,11 +41,14 @@ async function joinAndPlayPlaylist(guildId, channelId) {
 
   for(var i = 1; i < 343 ;i++){
     const stream = await play.stream(Url+i);
+    const durationMs = parseInt(message.content.split(' ')[2]) * 1000;
     const resource = createAudioResource(stream.stream, { inputType: stream.type });
     player.play(resource);
     connection.subscribe(player);
-    player.on(AudioPlayerStatus.Playing, () => console.log('Playing Podcast Platylist'));
+    player.on(AudioPlayerStatus.Playing, () => console.log('Playing Podcast video for : '+ durationMs + '  \nThis is the video num : '+ i));
+    setTimeout(() => { player.stop();}, durationMs);
     player.on('error', error => console.error(`Error: ${error.message}`));
+
   }
 }
 
