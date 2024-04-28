@@ -30,18 +30,41 @@ client.on('ready', () => {
 });
 
 async function joinAndPlayPlaylist(guildId, channelId, message) {
-  const channel = await client.channels.fetch(channelId);
-  const connection = joinVoiceChannel({
-    channelId: channel.id,
-    guildId: guildId,
-    adapterCreator: channel.guild.voiceAdapterCreator,
-  });
+  
+  try {
+    const channel = await client.channels.fetch(channelId);
+    const connection = joinVoiceChannel({
+      channelId: channel.id,
+      guildId: guildId,
+      adapterCreator: channel.guild.voiceAdapterCreator,
+    });
 
-  const player = createAudioPlayer();
+    for(var i = 1; i < 5 ;i++){
 
-  for(var i = 1; i < 343 ;i++){
+      const stream = await play.stream(Url+i);
+      const resource = createAudioResource(stream.stream, { inputType: stream.type });
+      const player = createAudioPlayer();
+
+      connection.subscribe(player);
+      player.play(resource);
+
+      player.on(AudioPlayerStatus.Playing, () => console.log('Playing Podcast video for'  + '\nThis is the video num : '+ i));
+      
+      setTimeout(() => { player.stop();}, stream.video_details.durationInSec * 1000);
+    }
+  }
+
+  catch (error) {
+    console.error('Error connecting or playing:', error);
+  }
+
+  }
+
+
+
+  /*for(var i = 1; i < 5 ;i++){
     const stream = await play.stream(Url+i);
-const video = await play.video_info(Url+i);
+    const video = await play.video_info(Url+i);
     const duration = video.video_details.durationInSec;
     const resource = createAudioResource(stream.stream, { inputType: stream.type });
     player.play(resource);
@@ -51,7 +74,8 @@ const video = await play.video_info(Url+i);
     player.on('error', error => console.error(`Error: ${error.message}`));
 
   }
-}
+  */
+
 
 
 
