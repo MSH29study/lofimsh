@@ -41,6 +41,7 @@ async function joinAndPlayPlaylist(guildId, channelId, message) {
 
   for(var i = 1; i < 343 ;i++){
     const stream = await play.stream(Url+i);
+const video = await play.video_info(Url+i);
     const duration = video.video_details.durationInSec;
     const resource = createAudioResource(stream.stream, { inputType: stream.type });
     player.play(resource);
