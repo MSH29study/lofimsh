@@ -1,82 +1,52 @@
-const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
-const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, VoiceConnectionStatus } = require('@discordjs/voice');
-const play = require('play-dl'); 
-require('dotenv').config();
-const express = require("express")
-const app = express();
+const { Client, GatewayIntentBits } = require('discord.js');
+const { joinVoiceChannel, createAudioPlayer, createAudioResource, StreamType } = require('@discordjs/voice');
+const play = require('play-dl');
 
-app.listen(() => console.log("I'm Ready To Work..! 24H"));
-app.get('/', (req, res) => {
-  res.send(`
-  <body>
-  <center><h1>Bot 24H ON!</h1></center
-  </body>`)
-});
+require('dotenv').config();
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent]
-});
-var listener = app.listen(process.env.PORT || 2000, function () {
-  console.log('Your app is listening on port ' + listener.address().port);
-});
-
-const channelId = '1229892286691938365';
-const guildId = '1157418594649522268'; 
-const Url = 'https://www.youtube.com/watch?v=eXp4Mt1S8Lg&list=PLcetZ6gSk96-FECmH9l7Vlx5VDigvgZpt&index='; 
-
-client.on('ready', () => {
-  console.log(`✅ | Logged in as ${client.user.tag}`);
-  joinAndPlayPlaylist(guildId, channelId);
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildVoiceStates,
+    ]
 });
 
-async function joinAndPlayPlaylist(guildId, channelId, message) {
-  
-  try {
-    const channel = await client.channels.fetch(channelId);
-    const connection = joinVoiceChannel({
-      channelId: channel.id,
-      guildId: guildId,
-      adapterCreator: channel.guild.voiceAdapterCreator,
-    });
+const videoUrl = 'https://www.youtube.com/watch?v=eXp4Mt1S8Lg&list=PLcetZ6gSk96-FECmH9l7Vlx5VDigvgZpt&index=2';
 
-    for(var i = 1; i < 5 ;i++){
+client.on('ready', async () => {
+    console.log(`Logged in as ${client.user.tag}!`);
+    const guild = client.guilds.cache.get('1157418594649522268');
+    const voiceChannel = guild.channels.cache.get('1229892286691938365'); 
 
-      const stream = await play.stream(Url+i);
-      const resource = createAudioResource(stream.stream, { inputType: stream.type });
-      const player = createAudioPlayer();
+    if (voiceChannel) {
+        try {
+            const connection = joinVoiceChannel({
+                channelId: voiceChannel.id,
+                guildId: guild.id,
+                adapterCreator: guild.voiceAdapterCreator,
+            });
 
-      connection.subscribe(player);
-      player.play(resource);
+            const ytStream = await play.stream(videoUrl);
+            const audioResource = createAudioResource(ytStream.stream, {
+                inputType: ytStream.type,
+                inlineVolume: true
+            });
+            const player = createAudioPlayer();
 
-      player.on(AudioPlayerStatus.Playing, () => console.log('Playing Podcast video for'  + '\nThis is the video num : '+ i));
-      
-      setTimeout(() => { player.stop();}, stream.video_details.durationInSec * 1000);
+            connection.subscribe(player);
+            player.play(audioResource);
+
+            console.log(`Playing: ${videoUrl}`);
+
+            setTimeout(() => {
+                player.stop();
+                console.log('Playback finished.');
+            }, ytStream.video_details.durationInSec * 1000);
+
+        } catch (error) {
+            console.error('Error connecting or playing:', error);
+        }
     }
-  }
+});
 
-  catch (error) {
-    console.error('Error connecting or playing:', error);
-  }
-
-  }
-
-
-
-  /*for(var i = 1; i < 5 ;i++){
-    const stream = await play.stream(Url+i);
-    const video = await play.video_info(Url+i);
-    const duration = video.video_details.durationInSec;
-    const resource = createAudioResource(stream.stream, { inputType: stream.type });
-    player.play(resource);
-    connection.subscribe(player);
-    player.on(AudioPlayerStatus.Playing, () => console.log('Playing Podcast video for : '+ duration + '  \nThis is the video num : '+ i));
-    setTimeout(() => { player.stop();}, duration);
-    player.on('error', error => console.error(`Error: ${error.message}`));
-
-  }
-  */
-
-
-
-
-client.login(process.env.TOKEN);
+client.login(process.env.BOT_TOKEN);
