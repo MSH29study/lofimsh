@@ -40,10 +40,8 @@ async function playQuran(channel, message) {
   const stream = await play.stream(Url);
   const resource = createAudioResource(stream.stream, { inputType: stream.type });
   player.play(resource);
-
-  player.on(AudioPlayerStatus.Playing, () => {
-    message.channel.send({ embeds: [new EmbedBuilder().setDescription('**تم تشغيل القرآن**').setColor(0x00ff00)] });
-  });
+  player.on(AudioPlayerStatus.Playing, () => console.log('Playing Podcast'));
+  
 
   player.on('error', error => console.error(`Error: ${error.message}`));
 }
