@@ -1,52 +1,73 @@
-const { Client, GatewayIntentBits } = require('discord.js');
-const { joinVoiceChannel, createAudioPlayer, createAudioResource, StreamType } = require('@discordjs/voice');
-const play = require('play-dl');
-
+const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
+const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, VoiceConnectionStatus } = require('@discordjs/voice');
+const play = require('play-dl'); 
 require('dotenv').config();
 
 const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildVoiceStates,
-    ]
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent]
+});
+const express = require("express")
+const app = express();
+var listener = app.listen(process.env.PORT || 2000, function () {
+  console.log('Your app is listening on port ' + listener.address().port);
+});
+app.listen(() => console.log("I'm Ready To Work..! 24H"));
+app.get('/', (req, res) => {
+  res.send(`
+  <body>
+  <center><h1>Bot 24H ON!</h1></center
+  </body>`)
+});
+const channelId = '1229892286691938365';
+const guildId = '1157418594649522268'; 
+const Url = 'https://youtu.be/MT8mUsrShEk?si=bYdNushQauLVIJ4a'; 
+
+client.on('ready', () => {
+  console.log(`✅ | Logged in as ${client.user.tag}`);
+  joinAndPlayQuran(guildId, channelId);
 });
 
-const videoUrl = 'https://www.youtube.com/watch?v=eXp4Mt1S8Lg&list=PLcetZ6gSk96-FECmH9l7Vlx5VDigvgZpt&index=2';
+async function playQuran(channel, message) {
+  const player = createAudioPlayer();
+  const connection = joinVoiceChannel({
+    channelId: channel.id,
+    guildId: channel.guild.id,
+    adapterCreator: channel.guild.voiceAdapterCreator,
+  });
 
-client.on('ready', async () => {
-    console.log(`Logged in as ${client.user.tag}!`);
-    const guild = client.guilds.cache.get('1157418594649522268');
-    const voiceChannel = guild.channels.cache.get('1229892286691938365'); 
+  connection.subscribe(player);
 
-    if (voiceChannel) {
-        try {
-            const connection = joinVoiceChannel({
-                channelId: voiceChannel.id,
-                guildId: guild.id,
-                adapterCreator: guild.voiceAdapterCreator,
-            });
+  const stream = await play.stream(Url);
+  const resource = createAudioResource(stream.stream, { inputType: stream.type });
+  player.play(resource);
 
-            const ytStream = await play.stream(videoUrl);
-            const audioResource = createAudioResource(ytStream.stream, {
-                inputType: ytStream.type,
-                inlineVolume: true
-            });
-            const player = createAudioPlayer();
+  player.on(AudioPlayerStatus.Playing, () => {
+    message.channel.send({ embeds: [new EmbedBuilder().setDescription('**تم تشغيل القرآن**').setColor(0x00ff00)] });
+  });
 
-            connection.subscribe(player);
-            player.play(audioResource);
+  player.on('error', error => console.error(`Error: ${error.message}`));
+}
 
-            console.log(`Playing: ${videoUrl}`);
+async function joinAndPlayQuran(guildId, channelId) {
+  const channel = await client.channels.fetch(channelId);
+  const connection = joinVoiceChannel({
+    channelId: channel.id,
+    guildId: guildId,
+    adapterCreator: channel.guild.voiceAdapterCreator,
+  });
 
-            setTimeout(() => {
-                player.stop();
-                console.log('Playback finished.');
-            }, ytStream.video_details.durationInSec * 1000);
+  const player = createAudioPlayer();
 
-        } catch (error) {
-            console.error('Error connecting or playing:', error);
-        }
-    }
-});
+  const stream = await play.stream(Url);
+  const resource = createAudioResource(stream.stream, { inputType: stream.type });
+
+  player.play(resource);
+  connection.subscribe(player);
+
+  player.on(AudioPlayerStatus.Playing, () => console.log('Playing Quran'));
+  player.on('error', error => console.error(`Error: ${error.message}`));
+}
+
+
 
 client.login(process.env.TOKEN);
